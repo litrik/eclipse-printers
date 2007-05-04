@@ -13,3 +13,4 @@ Release the new version of the plug-in:
   # Upload the new release to [http://code.google.com/p/eclipse-printers/downloads/list the download page] and label it as "Featured"
   # Remove the "Featured" label from the previous release
   # Update RecentChanges on the wiki
+  # Update the plug-in details at [http://www.eclipseplugincentral.com/Web_Links-index-req-viewlink-cid-962.html Eclipse Plug-in Central]
