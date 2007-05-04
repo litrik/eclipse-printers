@@ -1,0 +1,8 @@
+#summary Recent changes
+#labels Featured
+
+1.0.0 (2007-05-04) 
+
+  * Initial release. 
+
+
