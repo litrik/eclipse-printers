@@ -12,6 +12,8 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.printing.Printer;
 import org.eclipse.swt.printing.PrinterData;
@@ -37,7 +39,7 @@ public class PrintersView extends ViewPart
 	private Action fRefreshAction;
 
 	private static int columnWidths[] =
-	{ 200, 40, 120, 120, 120 };
+	{ 200, 60, 120, 120, 120 };
 	private static String columnWidthMementoKeys[] =
 	{ "MEMENTO_WIDTH_COLUMN_0", "MEMENTO_WIDTH_COLUMN_1", "MEMENTO_WIDTH_COLUMN_2", "MEMENTO_WIDTH_COLUMN_3",
 			"MEMENTO_WIDTH_COLUMN_4" };
@@ -105,8 +107,59 @@ public class PrintersView extends ViewPart
 
 	}
 
-	class NameSorter extends ViewerSorter
+	class PrinterSorter extends ViewerSorter
 	{
+		private int criteria;
+
+		public PrinterSorter(int criteria)
+		{
+			super();
+			this.criteria = criteria;
+		}
+
+		public int compare(Viewer viewer, Object o1, Object o2)
+		{
+
+			PrinterData printerData1 = (PrinterData) o1;
+			PrinterData printerData2 = (PrinterData) o2;
+			Printer printer1 = new Printer(printerData1);
+			Printer printer2 = new Printer(printerData2);
+
+			int result = 0;
+
+			switch (criteria)
+			{
+				case 0:
+					result = collator.compare(printer1.getPrinterData().name, printer2.getPrinterData().name);
+					break;
+				case 1:
+					result = printer1.getDPI().x - printer2.getDPI().x;
+					result = result < 0 ? -1 : (result > 0) ? 1 : 0;
+					break;
+				case 2:
+					result = (printer1.getBounds().width * 1000 / printer1.getDPI().x) - (printer2.getBounds().width * 1000 / printer2.getDPI().x);
+					result = result < 0 ? -1 : (result > 0) ? 1 : 0;
+					break;
+				case 3:
+					result = (printer1.getClientArea().width  * 1000 / printer1.getDPI().x) - (printer2.getClientArea().width  * 1000 / printer2.getDPI().x);
+					result = result < 0 ? -1 : (result > 0) ? 1 : 0;
+					break;
+				case 4:
+					result = (printer1.computeTrim(0, 0, 0, 0).x  * 1000 / printer1.getDPI().x) - (printer2.computeTrim(0, 0, 0, 0).x  * 1000 / printer1.getDPI().x);
+					result = result < 0 ? -1 : (result > 0) ? 1 : 0;
+					break;
+				default:
+					result = 0;
+			}
+			printer1.dispose();
+			printer2.dispose();
+			return result;
+		}
+
+		public int getCriteria()
+		{
+			return criteria;
+		}
 	}
 
 	/**
@@ -123,28 +176,39 @@ public class PrintersView extends ViewPart
 	{
 		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 
-		Table table = viewer.getTable();
+		final Table table = viewer.getTable();
 
-		new TableColumn(table, SWT.LEFT);
-		new TableColumn(table, SWT.RIGHT);
-		new TableColumn(table, SWT.LEFT);
-		new TableColumn(table, SWT.LEFT);
-		new TableColumn(table, SWT.LEFT);
-
-		for (int i = 0; i < table.getColumns().length; i++)
+		for (int i = 0; i < columnTitles.length; i++)
 		{
-			TableColumn column = table.getColumns()[i];
+			TableColumn column = new TableColumn(table, SWT.LEFT);
 			column.setWidth(columnWidths[i]);
 			column.setText(columnTitles[i]);
+			column.addSelectionListener(new SelectionAdapter()
+			{
+
+				public void widgetSelected(SelectionEvent e)
+				{
+					for (int j = 0; j < table.getColumns().length; j++)
+					{
+						if(table.getColumns()[j] == (TableColumn)(e.widget))
+						{
+							viewer.setSorter(new PrinterSorter(j));
+							viewer.getTable().setSortColumn(viewer.getTable().getColumns()[j]);
+						}
+					}
+				}
+			});
 		}
 
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);
+		table.setSortDirection(SWT.UP);
+		table.setSortColumn(table.getColumns()[0]);
 
 		viewer.setContentProvider(new ViewContentProvider());
 		viewer.setLabelProvider(new ViewLabelProvider());
 		viewer.setInput(getViewSite());
-		viewer.setSorter(new NameSorter());
+		viewer.setSorter(new PrinterSorter(0));
 
 		makeActions();
 		contributeToActionBars();
@@ -207,10 +271,9 @@ public class PrintersView extends ViewPart
 		viewer.getControl().setFocus();
 	}
 
-	
 	public void refresh()
 	{
 		viewer.refresh();
 	}
-	
+
 }
