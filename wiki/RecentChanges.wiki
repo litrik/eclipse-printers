@@ -1,6 +1,10 @@
 #summary Recent changes
 #labels Featured
 
+Trunk
+
+  * Added support to sort each column. ([http://code.google.com/p/eclipse-printers/issues/detail?id=1 Issue 1])
+
 1.0.0 (2007-05-04) 
 
   * Initial release. 
