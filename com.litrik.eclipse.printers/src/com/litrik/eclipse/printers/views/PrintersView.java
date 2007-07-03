@@ -19,7 +19,9 @@ package com.litrik.eclipse.printers.views;
 import java.text.DecimalFormat;
 
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -42,6 +44,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
 
 import com.litrik.eclipse.printers.actions.RefreshAction;
+import com.litrik.eclipse.printers.actions.SetUnitAction;
 
 /**
  * View displaying all known printers.
@@ -57,6 +60,7 @@ public class PrintersView extends ViewPart
 	 * The action to refresh the list of printers.
 	 */
 	private Action fRefreshAction;
+	private SetUnitAction[] fSetUnitActions;
 
 	/**
 	 * The width of each column.
@@ -65,17 +69,28 @@ public class PrintersView extends ViewPart
 	{ 200, 60, 120, 120, 120 };
 
 	/**
-	 * The memento keys to store the width of each column.
+	 * The memento keys
 	 */
 	private static String columnWidthMementoKeys[] =
 	{ "MEMENTO_WIDTH_COLUMN_0", "MEMENTO_WIDTH_COLUMN_1", "MEMENTO_WIDTH_COLUMN_2", "MEMENTO_WIDTH_COLUMN_3",
 			"MEMENTO_WIDTH_COLUMN_4" };
+	private static String unitMementoKey = "MEMENTO_UNIT";
 
 	/**
 	 * The title of each column.
 	 */
 	private static String columnTitles[] =
 	{ "Name", "DPI", "Page Size", "Printable Area", "Trim" };
+
+	/*
+	 * The current unit.
+	 */
+	private int fUnit = SetUnitAction.UNIT_CM;
+
+	/*
+	 * The Units sub menu.
+	 */
+	private static String LABEL_UNITS = "Units";
 
 	/**
 	 * The content provider responsible for obtaining the actual list of known
@@ -144,18 +159,18 @@ public class PrintersView extends ViewPart
 					break;
 				case 2:
 					// The "Page Size" column.
-					text = pixelsToCm(printer.getBounds().width, printer.getDPI().x) + " x "
-							+ pixelsToCm(printer.getBounds().height, printer.getDPI().y);
+					text = formatPixels(printer.getBounds().width, printer.getDPI().x) + " x "
+							+ formatPixels(printer.getBounds().height, printer.getDPI().y);
 					break;
 				case 3:
 					// The "Printable Area" column.
-					text = pixelsToCm(printer.getClientArea().width, printer.getDPI().x) + " x "
-							+ pixelsToCm(printer.getClientArea().height, printer.getDPI().y);
+					text = formatPixels(printer.getClientArea().width, printer.getDPI().x) + " x "
+							+ formatPixels(printer.getClientArea().height, printer.getDPI().y);
 					break;
 				case 4:
 					// The "Trim" column.
-					text = pixelsToCm(printer.computeTrim(0, 0, 0, 0).x, printer.getDPI().x) + " x "
-							+ pixelsToCm(printer.computeTrim(0, 0, 0, 0).y, printer.getDPI().y);
+					text = formatPixels(printer.computeTrim(0, 0, 0, 0).x, printer.getDPI().x) + " x "
+							+ formatPixels(printer.computeTrim(0, 0, 0, 0).y, printer.getDPI().y);
 					break;
 				default:
 					break;
@@ -165,17 +180,17 @@ public class PrintersView extends ViewPart
 		}
 
 		/**
-		 * Convert pixels to cm
+		 * Convert pixels to the current unit
 		 * 
 		 * @param pixels the number of pixels to convert
 		 * @param dpi the DPI
-		 * @return the number of cm for the specified pixels at the specified
+		 * @return the number of units for the specified pixels at the specified
 		 *         DPI
 		 */
-		private String pixelsToCm(int pixels, int dpi)
+		private String formatPixels(int pixels, int dpi)
 		{
 			DecimalFormat format = new DecimalFormat("########0.00");
-			return format.format(pixels * 2.54 / dpi);
+			return format.format(pixels * (fUnit == SetUnitAction.UNIT_CM ? 2.54 : 1) / dpi);
 		}
 
 		/*
@@ -280,7 +295,9 @@ public class PrintersView extends ViewPart
 	 * The constructor.
 	 */
 	public PrintersView()
-	{}
+	{
+	// Do nothing
+	}
 
 	/*
 	 * Create the SWT controls for this view.
@@ -334,6 +351,7 @@ public class PrintersView extends ViewPart
 	{
 		IActionBars bars = getViewSite().getActionBars();
 		fillLocalToolBar(bars.getToolBarManager());
+		fillLocalMenuBar(bars.getMenuManager());
 	}
 
 	/**
@@ -347,15 +365,33 @@ public class PrintersView extends ViewPart
 	}
 
 	/**
+	 * Fill the local menu bar.
+	 * 
+	 * @param manager the menu bar manager.
+	 */
+	private void fillLocalMenuBar(IMenuManager manager)
+	{
+		MenuManager unitsSubMenu = new MenuManager(LABEL_UNITS);
+		for (int i = 0; i < fSetUnitActions.length; i++)
+		{
+			unitsSubMenu.add(fSetUnitActions[i]);
+		}
+		manager.add(unitsSubMenu);
+		fSetUnitActions[fUnit].setChecked(true);
+	}
+
+	/**
 	 * Make all the different actions.
 	 */
 	private void makeActions()
 	{
 		fRefreshAction = new RefreshAction(this);
+		fSetUnitActions = new SetUnitAction[]
+		{ new SetUnitAction(this, SetUnitAction.UNIT_CM), new SetUnitAction(this, SetUnitAction.UNIT_INCH) };
 	}
 
 	/*
-	 * Initialize the view by restoring the width of each column.
+	 * Initialize the view by restoring all settings
 	 */
 	public void init(IViewSite site, IMemento memento) throws PartInitException
 	{
@@ -363,6 +399,7 @@ public class PrintersView extends ViewPart
 
 		if (memento != null)
 		{
+			// Restore the width of each column.
 			for (int i = 0; i < columnWidthMementoKeys.length; i++)
 			{
 				String mementoKey = columnWidthMementoKeys[i];
@@ -371,11 +408,17 @@ public class PrintersView extends ViewPart
 					columnWidths[i] = memento.getInteger(mementoKey).intValue();
 				}
 			}
+
+			// Restore the current unit.
+			if (memento.getInteger(unitMementoKey) != null)
+			{
+				fUnit = memento.getInteger(unitMementoKey).intValue();
+			}
 		}
 	}
 
 	/*
-	 * Save the view's state by saving the width of each column.
+	 * Save the view's state by saving all settings
 	 * 
 	 * @see org.eclipse.ui.part.ViewPart#saveState(org.eclipse.ui.IMemento)
 	 */
@@ -384,13 +427,19 @@ public class PrintersView extends ViewPart
 		super.saveState(memento);
 		Table table = viewer.getTable();
 
+		// Save the width of each column.
 		for (int i = 0; i < columnWidthMementoKeys.length; i++)
 		{
 			memento.putInteger(columnWidthMementoKeys[i], table.getColumn(i).getWidth());
 		}
+
+		// Save the current unit.
+		memento.putInteger(unitMementoKey, fUnit);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.eclipse.ui.part.WorkbenchPart#setFocus()
 	 */
 	public void setFocus()
@@ -403,6 +452,15 @@ public class PrintersView extends ViewPart
 	 */
 	public void refresh()
 	{
+		viewer.refresh();
+	}
+
+	/**
+	 * Refresh the view's content using a specific unit.
+	 */
+	public void refresh(int unit)
+	{
+		fUnit = unit;
 		viewer.refresh();
 	}
 }
