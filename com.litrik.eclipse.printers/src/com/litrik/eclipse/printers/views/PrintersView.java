@@ -18,11 +18,14 @@ package com.litrik.eclipse.printers.views;
 
 import java.text.DecimalFormat;
 
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
@@ -31,6 +34,8 @@ import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.printing.Printer;
 import org.eclipse.swt.printing.PrinterData;
@@ -43,6 +48,7 @@ import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
 
+import com.litrik.eclipse.printers.Activator;
 import com.litrik.eclipse.printers.actions.RefreshAction;
 import com.litrik.eclipse.printers.actions.SetUnitAction;
 
@@ -60,6 +66,7 @@ public class PrintersView extends ViewPart
 	 * The action to refresh the list of printers.
 	 */
 	private Action fRefreshAction;
+	private Action fPrintAction;
 	private SetUnitAction[] fSetUnitActions;
 
 	/**
@@ -362,6 +369,7 @@ public class PrintersView extends ViewPart
 	private void fillLocalToolBar(IToolBarManager manager)
 	{
 		manager.add(fRefreshAction);
+		manager.add(fPrintAction);
 	}
 
 	/**
@@ -386,6 +394,61 @@ public class PrintersView extends ViewPart
 	private void makeActions()
 	{
 		fRefreshAction = new RefreshAction(this);
+		fPrintAction = new Action()
+		{
+			public void run()
+			{
+				GC gc = null;
+				Printer printer = null;
+				try
+				{
+					PrinterData printerData = (PrinterData)((IStructuredSelection)viewer.getSelection()).getFirstElement();
+					if (printerData != null)
+					{
+						printer = new Printer(printerData);
+						gc = new GC(printer);
+						printer.startJob("Hello");
+						printer.startPage();
+						Color black = printer.getSystemColor(SWT.COLOR_BLACK);
+						gc.setForeground(black);
+						gc.setLineWidth(1);
+						for (int i = 0; i < 6; i++)
+						{
+							// Vertical, left
+							gc.drawLine(100 * i, 0, 100 * i, printer.getBounds().height);
+							// Vertical, right
+							gc.drawLine(printer.getBounds().width - 100 * i, 0, printer.getBounds().width - 100 * i, printer
+									.getBounds().height);
+							// Horizontal, top
+							gc.drawLine(0, 100 * i, printer.getBounds().width, 100 * i);
+							// Horizontal, bottom
+							gc.drawLine(0, printer.getBounds().height - 100 * i, printer.getBounds().width,
+									printer.getBounds().height - 100 * i);
+						}
+						printer.endPage();
+						printer.endJob();
+					}
+				}
+				catch (Exception e)
+				{
+					Activator.getDefault().getLog().log(
+							new Status(IStatus.ERROR, Activator.PLUGIN_ID, IStatus.OK, "Failed to print a test page.", e));
+				}
+				finally
+				{
+					if (gc != null)
+					{
+						gc.dispose();
+					}
+					if (printer != null)
+					{
+						printer.dispose();
+					}
+				}
+			}
+		};
+		fPrintAction.setToolTipText("Print Test Page");
+		fPrintAction.setImageDescriptor(Activator.getImageDescriptor("icons/elcl16/test.gif"));
 		fSetUnitActions = new SetUnitAction[]
 		{ new SetUnitAction(this, SetUnitAction.UNIT_CM), new SetUnitAction(this, SetUnitAction.UNIT_INCH) };
 	}
