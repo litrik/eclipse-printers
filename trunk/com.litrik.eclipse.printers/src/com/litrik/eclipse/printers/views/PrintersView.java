@@ -311,7 +311,7 @@ public class PrintersView extends ViewPart
 	 */
 	public void createPartControl(Composite parent)
 	{
-		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+		viewer = new TableViewer(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 
 		final Table table = viewer.getTable();
 
@@ -341,11 +341,13 @@ public class PrintersView extends ViewPart
 		table.setLinesVisible(true);
 		table.setSortDirection(SWT.UP);
 		table.setSortColumn(table.getColumns()[0]);
-
+		
 		viewer.setContentProvider(new ViewContentProvider());
 		viewer.setLabelProvider(new ViewLabelProvider());
 		viewer.setInput(getViewSite());
 		viewer.setSorter(new PrinterSorter(0));
+
+		table.setSelection(0);
 
 		makeActions();
 		contributeToActionBars();
@@ -396,6 +398,9 @@ public class PrintersView extends ViewPart
 		fRefreshAction = new RefreshAction(this);
 		fPrintAction = new Action()
 		{
+			/* 
+			 * Print a test page to the currently selected printer.
+			 */
 			public void run()
 			{
 				GC gc = null;
@@ -407,11 +412,13 @@ public class PrintersView extends ViewPart
 					{
 						printer = new Printer(printerData);
 						gc = new GC(printer);
+						// Start a print job.
 						printer.startJob("Hello");
 						printer.startPage();
 						Color black = printer.getSystemColor(SWT.COLOR_BLACK);
 						gc.setForeground(black);
 						gc.setLineWidth(1);
+						// Draw lines at each side of the page. 
 						for (int i = 0; i < 6; i++)
 						{
 							// Vertical, left
@@ -425,6 +432,7 @@ public class PrintersView extends ViewPart
 							gc.drawLine(0, printer.getBounds().height - 100 * i, printer.getBounds().width,
 									printer.getBounds().height - 100 * i);
 						}
+						// End the print job
 						printer.endPage();
 						printer.endJob();
 					}
