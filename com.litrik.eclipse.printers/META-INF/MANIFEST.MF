@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Printers Plug-in
 Bundle-SymbolicName: com.litrik.eclipse.printers; singleton:=true
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Activator: com.litrik.eclipse.printers.Activator
 Bundle-Vendor: litrik.com
 Bundle-Localization: plugin
