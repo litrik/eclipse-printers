@@ -1,4 +1,0 @@
-#summary Screenshots
-#labels Featured
-
-http://eclipse-printers.googlecode.com/files/eclipse-printers-view-release-1.1.0.png
