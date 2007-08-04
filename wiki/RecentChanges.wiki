@@ -1,13 +1,13 @@
 #summary Recent changes
 #labels Featured
 
-Trunk
+1.1.0 (2007-08-04) 
 
+  * Added support for printing a test page. ([http://code.google.com/p/eclipse-printers/issues/detail?id=4 Issue 4])
   * Made units configurable in the view's local menu. ([http://code.google.com/p/eclipse-printers/issues/detail?id=3 Issue 3])
   * Added support to sort each column. ([http://code.google.com/p/eclipse-printers/issues/detail?id=1 Issue 1])
 
 1.0.0 (2007-05-04) 
 
   * Initial release. 
-
 
