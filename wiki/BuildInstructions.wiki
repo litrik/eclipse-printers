@@ -8,6 +8,7 @@ Build/export the plug-in:
   # Select "Deployable plug-ins and features"
   # Click "Next >"
   # Enter directory to export the plug-in
+  # Click "Finish"
 
 Release the new version of the plug-in:
   # Upload the new release to [http://code.google.com/p/eclipse-printers/downloads/list the download page] and label it as "Featured"
